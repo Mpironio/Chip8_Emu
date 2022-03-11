@@ -74,11 +74,70 @@ void chip8::emulateCycle() {
 				_graphics[i] = 0;
 			}
 			_pc += 2;
+			break;
 		case 0x000E: //Caso 00EE: RET
 			_sp--;
 			_pc = _stack[_sp];
+			break;
 		}
+	case 0x1000:	//Caso 1nnn: JP addr
+		_pc = _opcode & 0x0FFF;
+		break;
+
+	case 0x2000:	//Caso 2nnn: CALL addr
+		_sp++;
+		_stack[_sp] = _pc;
+		_pc = _opcode & 0x0FFF;
+		break;
+
+	case 0x3000:	//Caso 3xkk: SE Vx, byte
+		_regs[(_opcode >> 8) & 0xF] == _opcode & 0x00FF ? _pc += 4 : _pc = _pc;
+		break;
+
+	case 0x4000:	//Caso 4xkk: SNE Vx, byte
+		_regs[(_opcode >> 8) & 0xF] != _opcode & 0x00FF ? _pc += 4 : _pc = _pc;
+		break;
+
+	case 0x5000:	//Caso 5xy0: SE Vx, Vy
+		_regs[(_opcode >> 8) & 0xF] == _regs[(_opcode >> 4) & 0xF] ? _pc += 4 : _pc = _pc;
+		break;
+
+	case 0x6000:	//Caso 6xkk: LD Vx, byte
+		_regs[(_opcode >> 8) & 0xF] = _opcode & 0xFF;
+		break;
+
+	case 0x7000:	//Caso 7xkk: ADD Vx, byte
+		_regs[(_opcode >> 8) & 0xF] += _opcode & 0xFF;
+		break;
+
+	case 0x8000:	
+		switch (_opcode & 0xF) {
+		case 0x0:	//Caso 8xy0: LD Vx, Vy
+			_regs[(_opcode >> 8) & 0xF] = _regs[(_opcode >> 4) & 0xF];
+			break;
+		case 0x1:	//Caso 8xy1: OR Vx, Vy
+			_regs[(_opcode >> 8) & 0xF] = _regs[(_opcode >> 8) & 0xF] | _regs[(_opcode >> 4) & 0xF];
+			break;
+		case 0x2:	//Caso 8xy2: AND Vx, Vy
+			_regs[(_opcode >> 8) & 0xF] = _regs[(_opcode >> 8) & 0xF] & _regs[(_opcode >> 4) & 0xF];
+			break;
+		case 0x3:	//Caso 8xy3: XOR Vx, Vy
+			_regs[(_opcode >> 8) & 0xF] = _regs[(_opcode >> 8) & 0xF] ^ _regs[(_opcode >> 4) & 0xF];
+			break;
+		case 0x4:	//Caso 8xy4: ADD Vx, Vy
+			WORD Vx = _regs[(_opcode >> 8) & 0xF];
+			WORD sum = _regs[(_opcode >> 8) & 0xF] + _regs[(_opcode >> 4) & 0xF];
+			sum > 255 ? Vx = sum, _regs[15] = 1 : _regs[15] = 0;
+			break;
+
+		case 0x5:	//Caso 8xy5: SUB Vx, Vy
+
+		}
+		
+
+	
 	}
+
 
 }
 

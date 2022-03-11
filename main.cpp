@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 #include "chip8.h"
 #include <SDL.h>
 #undef main
@@ -47,6 +47,4 @@ bool CreateSDLWindow()
 int main() {
 	CreateSDLWindow();
 	return 0;
-	
->>>>>>> 34d10fa2bbbc91206f64e8d28fce8ccf950a8e01
 }
