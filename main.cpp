@@ -1,25 +1,25 @@
-#define SDL_MAIN_HANDLED
-#include <SDL.h> 
-#include <SDL_opengl.h>
-
-bool CreateSDLWindow()
-{
-	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
-	{
-		return false;
-	}
-	if (SDL_SetVideoMode(100, 100, 8, SDL_OPENGL) == NULL)
-	{
-		return false;
-	}
+#include "chip8.h"
+#include <SDL.h>
+#undef main
+#include <SDL_video.h>
 
 
-	SDL_WM_SetCaption("CodeSlinger - Chip8 Emulator", NULL);
-	return true;
+int window() {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+        return 1;
+    }
+    else {
+
+    }
+    SDL_Quit();
 }
 
 int main() {
-	CreateSDLWindow();
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+        return 1;
+    }
+    
 	return 0;
-	
 }
