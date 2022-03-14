@@ -1,17 +1,40 @@
 
-//#include "chip8.h"
+#include "chip8.h"
+#include "platform.h"
 #include <SDL.h>
 #undef main
-#include <SDL_video.h>
-#include <SDL_opengl.h>
 #include <iostream>
+#include <chrono>
 
-bool CreateSDLWindow()
-{
-	return true;
-}
 
 int main() {
-	CreateSDLWindow();
+	
+	int cycleDelay = 4000;
+	
+
+	chip8 chip = chip8();
+	chip.loadGame("IBM Logo.ch8");
+	
+	Platform platform("emu", 64 * 10, 32 * 10, 64, 32);
+
+	int videoPitch = sizeof(chip.video[0]) * 64;
+	
+	auto lastCycleTime = std::chrono::high_resolution_clock::now();
+	bool quit = false;
+
+	while (!quit) {
+		quit = platform.ProcessInput(chip.keypad);
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float dt = std::chrono::duration<float, std::chrono::milliseconds::period>(currentTime - lastCycleTime).count();
+
+		if (dt > cycleDelay) {
+			lastCycleTime = currentTime;
+
+			chip.emulateCycle();
+
+			platform.Update(chip.video, videoPitch);
+		}
+	}
 	return 0;
 }

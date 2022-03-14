@@ -1,10 +1,11 @@
 #include "chip8.h"
 #include <fstream>
+#include <iostream>
 
 
-const WORD START_ADRESS = 0x200;
-const WORD FONTSET_START_ADRESS = 0x050;
-const WORD FONTSET[80] =
+const uint16_t START_ADRESS = 0x200;
+const uint16_t FONTSET_START_ADRESS = 0x050;
+const uint16_t FONTSET[80] =
 {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 	0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -29,10 +30,21 @@ chip8::chip8() {
 	_I = 0;
 	_sp = 0;
 
-	_regs[16] = { 0 };
-	_stack[16] = { 0 };
-	_memory[4096] = { 0 };
-	_graphics[64 * 32] = { 0 };
+	for (int i = 0; i < 16; i++) {
+		_regs[i] = 0;
+	}
+
+	for (int i = 0; i < 16; i++) {
+		_stack[i] = 0;
+	}
+
+	for (int i = 0; i < 4096; i++) {
+		_memory[i] = 0;
+	}
+
+	for (int i = 0; i < 64 * 32; i++) {
+		video[i] = 0;
+	}
 
 	for (int i = 0; i < 80; i++) {
 		_memory[FONTSET_START_ADRESS + i] = FONTSET[i];
@@ -46,19 +58,14 @@ void chip8::loadGame(char const* gameName) {
 
 	if (file.is_open()) {
 		std::streampos size = file.tellg(); //.tellg() nos da el offset en bytes del principio del archivo al último caracter
-		char* buffer = new char[size];
 
 		file.seekg(0, std::ios::beg);
-		file.read(buffer, size);
+		file.read((char*)&_memory[START_ADRESS], size);
 		file.close();
-
-		for (unsigned int i = 0; i < size; i++) {
-			_memory[START_ADRESS + i] = buffer[i];
-		}
-		delete[] buffer;
 	}
-
-	
+	else {
+		exit(1);
+	}
 }
 
 void chip8::emulateCycle() {
@@ -66,16 +73,16 @@ void chip8::emulateCycle() {
 	_opcode = _memory[_pc] << 8 | _memory[_pc + 1];
 
 	//Decode
-	WORD Vx = _regs[(_opcode >> 8) & 0xF];
-	WORD Vy = _regs[(_opcode >> 4) & 0xF];
-	WORD Vf = _regs[15];
+	uint16_t Vx = _regs[(_opcode >> 8) & 0xF];
+	uint16_t Vy = _regs[(_opcode >> 4) & 0xF];
+	uint16_t Vf = _regs[15];
 	switch (_opcode & 0xF000) {
 	case 0x0000:
 		switch (_opcode & 0x000F) {
 		case 0x0000: //Caso 00E0: CLS Clear 
 			//(si haces la intersección de arriba el resultado es 0x0000 y entra en este caso)
 			for (int i = 0; i < 64 * 32; i++) {
-				_graphics[i] = 0;
+				video[i] = 0;
 			}
 			_pc += 2;
 			break;
@@ -180,17 +187,41 @@ void chip8::emulateCycle() {
 		_pc += 2;
 		break;
 
-	case 0xD000:	//Caso Dxyn: DRW Vx, Vy, nibble
+	case 0xD000: //Caso Dxyn: DRW Vx, Vy, nibble
+	{
+		uint8_t height = _opcode & 0x000F;
+
+		uint8_t xPos = _regs[Vx] % 64;
+		uint8_t	yPos = _regs[Vx] % 32;
+
+		_regs[0xF] = 0;
+		for (int row = 0; row < height; row++) {
+			uint8_t spriteByte = _memory[_I + row];
+			for (int col = 0; col < 8; col++) {
+
+				uint8_t spritePixel = spriteByte & (0x80 >> col);
+				uint32_t* screenPixel = &video[(yPos + row) * 64 + (xPos + col)];
+
+				if (spritePixel) {
+					if (*screenPixel == 0xFFFFFFFF) {
+						_regs[0xF] = 1;
+					}
+
+					*screenPixel ^= 0xFFFFFFFF;
+				}
+			}
+		}
 		_pc += 2;
+	}
 		break;
 	
 	case 0xE000:
 		switch (_opcode & 0xF) {
 		case 0x000E: //Caso Ex9E: SKP Vx
-			_key[_regs[(_opcode & 0xF00) >> 8]] != 0 ? _pc += 4 : _pc += 2;
+			keypad[_regs[(_opcode & 0xF00) >> 8]] != 0 ? _pc += 4 : _pc += 2;
 			break;
 		case 0x0001: //Caso ExA1: SKNP Vx
-			_key[_regs[(_opcode & 0xF00) >> 8]] == 0 ? _pc += 4 : _pc += 2;
+			keypad[_regs[(_opcode & 0xF00) >> 8]] == 0 ? _pc += 4 : _pc += 2;
 			break;
 		}
 
@@ -201,7 +232,7 @@ void chip8::emulateCycle() {
 			_pc += 2;
 			break;
 		case 0x000A: //Caso Fx0A: LD Vx, K
-			_key[(_opcode & 0xF00) >> 8] ? _regs[Vx] = (_opcode & 0xF00) >> 8, _pc += 2 : _pc -= 2; //la forma de que una instrucción se repita hasta que se haga lo pedido es que el pc vuelva al lugar donde empezaba esa instrucción
+			keypad[(_opcode & 0xF00) >> 8] ? _regs[Vx] = (_opcode & 0xF00) >> 8, _pc += 2 : _pc -= 2; //la forma de que una instrucción se repita hasta que se haga lo pedido es que el pc vuelva al lugar donde empezaba esa instrucción
 			break;
 		case 0x0015: //Caso Fx15: LD DT, Vx
 			_delayTimer = Vx;
@@ -221,7 +252,8 @@ void chip8::emulateCycle() {
 			_pc += 2;
 			break;
 		case 0x0033: //Caso Fx33: LD B, Vx
-			BYTE value = _regs[Vx];
+		{
+			uint8_t value = _regs[Vx];
 
 			_memory[_I + 4] = value % 10;
 			value /= 10;
@@ -233,6 +265,7 @@ void chip8::emulateCycle() {
 			value /= 10;
 
 			_pc += 2;
+		}
 			break;
 		case 0x0055: //Caso Fx55: LD [I], Vx
 			for (int i = 0; i < Vx; i++) {
@@ -250,6 +283,13 @@ void chip8::emulateCycle() {
 		
 	}
 
+	if (_delayTimer > 0) {
+		_delayTimer--;
+	}
+
+	if (_soundTimer > 0) {
+		_soundTimer--;
+	}
 
 }
 

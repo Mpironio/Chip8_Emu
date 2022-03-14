@@ -1,26 +1,26 @@
 #include <string>
 
-typedef unsigned char BYTE;
-typedef unsigned short WORD;
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
 
 class chip8 {
     public:
         chip8();
         void loadGame(char const* gameName);
         void emulateCycle();
+        uint32_t video[64 * 32]{};
+        uint8_t keypad[16]{};
         
     private:
-        WORD _opcode; //chip8 has 2byte opcodes
-        BYTE _memory[4096]; //4kb memory
-        BYTE _regs[16]; //16 registers, 15 8-bit general purpose, 1 for carry flag
-        WORD _I;
-        WORD _pc;
-        WORD _stack[16];
-        WORD _sp;
-        BYTE _graphics[64*32];
-        BYTE _delayTimer;
-        BYTE _soundTimer;
-        BYTE _key[16];
+        uint16_t _opcode; //chip8 has 2byte opcodes
+        uint8_t _memory[4096]; //4kb memory
+        uint8_t _regs[16]; //16 registers, 15 8-bit general purpose, 1 for carry flag
+        uint16_t _I;
+        uint16_t _pc;
+        uint16_t _stack[16];
+        uint16_t _sp;
+        uint8_t _delayTimer;
+        uint8_t _soundTimer;
         
 };
 
