@@ -1,6 +1,7 @@
 #include "chip8.h"
 #include <fstream>
 
+
 const WORD START_ADRESS = 0x200;
 const WORD FONTSET_START_ADRESS = 0x050;
 const WORD FONTSET[80] =
@@ -134,14 +135,14 @@ void chip8::emulateCycle() {
 			_pc += 2;
 			break;
 		case 0x4:	//Caso 8xy4: ADD Vx, Vy
-			WORD sum = Vx + Vy;
-			sum > 255 ? Vx = sum, Vf = 1 : Vf = 0;
+			Vx + Vy > 255 ? Vx = Vx + Vy, Vf = 1 : Vf = 0;
 			_pc += 2;
 			break;
-		case 0x5:	//Caso 8xy5: SUB Vx, Vy
-			Vx > Vy ? Vf = 1: Vf = 0;
+		case 0x5: 	//Caso 8xy5: SUB Vx, Vy
+			Vx > Vy ? Vf = 1 : Vf = 0;
 			Vx = Vx - Vy;
 			_pc += 2;
+		
 			break;
 		case 0x6:	//Caso 8xy6: SHR Vx {, Vy}
 			Vx & 0xF == 1 ? Vf = 1 : Vf = 0;
@@ -200,8 +201,7 @@ void chip8::emulateCycle() {
 			_pc += 2;
 			break;
 		case 0x000A: //Caso Fx0A: LD Vx, K
-			WORD keyNumber = (_opcode & 0xF00) >> 8;
-			_key[keyNumber] ? _regs[Vx] = keyNumber, _pc += 2 : _pc -= 2; //la forma de que una instrucción se repita hasta que se haga lo pedido es que el pc vuelva al lugar donde empezaba esa instrucción
+			_key[(_opcode & 0xF00) >> 8] ? _regs[Vx] = (_opcode & 0xF00) >> 8, _pc += 2 : _pc -= 2; //la forma de que una instrucción se repita hasta que se haga lo pedido es que el pc vuelva al lugar donde empezaba esa instrucción
 			break;
 		case 0x0015: //Caso Fx15: LD DT, Vx
 			_delayTimer = Vx;
@@ -217,12 +217,35 @@ void chip8::emulateCycle() {
 			break;
 		case 0x0029: //Caso Fx29: LD F, Vx	//Se guarda en _I la posición de memoria donde se encuentra el carácter almacenado en Vx. El fontset arranca en 0x50
 					 //Cada caracter se representa con 5 líneas de 1 byte, por lo que tendremos un caracter distinto cada 5 bytes
-			WORD digit = _regs[Vx];
-			_I = FONTSET_START_ADRESS + (5 * digit);
+			_I = FONTSET_START_ADRESS + (5 * _regs[Vx]);
 			_pc += 2;
 			break;
 		case 0x0033: //Caso Fx33: LD B, Vx
+			BYTE value = _regs[Vx];
 
+			_memory[_I + 4] = value % 10;
+			value /= 10;
+
+			_memory[_I + 2] = value % 10;
+			value /= 10;
+
+			_memory[_I] = value % 10;
+			value /= 10;
+
+			_pc += 2;
+			break;
+		case 0x0055: //Caso Fx55: LD [I], Vx
+			for (int i = 0; i < Vx; i++) {
+				_memory[_I + i] = _regs[i];
+			}
+			_pc += 2;
+			break;
+		case 0x0065: //Caso LD Vx, [I]
+			for (int i = 0; i < Vx; i++) {
+				_regs[i] = _memory[_I + i];
+			}
+			_pc += 2;
+			break;
 		}
 		
 	}
