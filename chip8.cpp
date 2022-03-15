@@ -77,7 +77,7 @@ void chip8::emulateCycle() {
 	uint16_t Vy = _regs[(_opcode >> 4) & 0xF];
 	uint16_t Vf = _regs[15];
 	switch (_opcode & 0xF000) {
-	case 0x0000:
+	case 0x0000: {
 		switch (_opcode & 0x000F) {
 		case 0x0000: //Caso 00E0: CLS Clear 
 			//(si haces la intersección de arriba el resultado es 0x0000 y entra en este caso)
@@ -91,14 +91,20 @@ void chip8::emulateCycle() {
 			_pc = _stack[_sp];
 			break;
 		}
-	case 0x1000:	//Caso 1nnn: JP addr
-		_pc = _opcode & 0x0FFF;
+	}
 		break;
-
+	case 0x1000:	//Caso 1nnn: JP addr
+	{
+		_pc = _opcode & 0x0FFF;
+	}
+		break;
+	
 	case 0x2000:	//Caso 2nnn: CALL addr
+	{
 		_sp++;
 		_stack[_sp] = _pc;
 		_pc = _opcode & 0x0FFF;
+	}
 		break;
 
 	case 0x3000:	//Caso 3xkk: SE Vx, byte
