@@ -73,132 +73,181 @@ void chip8::emulateCycle() {
 	_opcode = _memory[_pc] << 8 | _memory[_pc + 1];
 
 	//Decode
-	uint16_t Vx = _regs[(_opcode >> 8) & 0xF];
-	uint16_t Vy = _regs[(_opcode >> 4) & 0xF];
-	uint16_t Vf = _regs[15];
+
+	uint8_t Vx = (_opcode >> 8) & 0xF;
+	uint8_t Vy = (_opcode >> 4) & 0xF;
+	uint8_t Vf = 15;
 	switch (_opcode & 0xF000) {
 	case 0x0000: {
 		switch (_opcode & 0x000F) {
-		case 0x0000: //Caso 00E0: CLS Clear 
+		case 0x0000: {//Caso 00E0: CLS Clear 
 			//(si haces la intersección de arriba el resultado es 0x0000 y entra en este caso)
 			for (int i = 0; i < 64 * 32; i++) {
 				video[i] = 0;
 			}
 			_pc += 2;
-			break;
-		case 0x000E: //Caso 00EE: RET
+		}
+				   break;
+		case 0x000E: {//Caso 00EE: RET
 			_sp--;
 			_pc = _stack[_sp];
-			break;
+		}
+				   break;
+
 		}
 	}
-		break;
+			   break;
 	case 0x1000:	//Caso 1nnn: JP addr
 	{
 		_pc = _opcode & 0x0FFF;
 	}
-		break;
-	
+	break;
+
 	case 0x2000:	//Caso 2nnn: CALL addr
 	{
 		_sp++;
 		_stack[_sp] = _pc;
 		_pc = _opcode & 0x0FFF;
 	}
-		break;
+	break;
 
 	case 0x3000:	//Caso 3xkk: SE Vx, byte
-		Vx == _opcode & 0x00FF ? _pc += 4 : _pc = _pc + 2;
-		break;
+	{
+		
+		_regs[Vx] == _opcode & 0x00FF ? _pc += 4 : _pc = _pc + 2;
+	}
+	break;
 
 	case 0x4000:	//Caso 4xkk: SNE Vx, byte
-		_regs[(_opcode >> 8) & 0xF] != _opcode & 0x00FF ? _pc += 4 : _pc = _pc + 2;
-		break;
+	{
+		_regs[Vx] != _opcode & 0x00FF ? _pc += 4 : _pc = _pc + 2;
+	}
+	break;
 
 	case 0x5000:	//Caso 5xy0: SE Vx, Vy
-		Vx == Vy ? _pc += 4 : _pc = _pc + 2;
-		break;
+	{
+		
+		_regs[Vx] == _regs[Vy] ? _pc += 4 : _pc = _pc + 2;
+	}
+	break;
 
 	case 0x6000:	//Caso 6xkk: LD Vx, byte
-		Vx = _opcode & 0xFF;
+	{
+		_regs[Vx] = _opcode & 0xFF;
 		_pc += 2;
-		break;
+	}
+	break;
 
 	case 0x7000:	//Caso 7xkk: ADD Vx, byte
-		Vx += _opcode & 0xFF;
+	{
+		_regs[Vx] += _opcode & 0xFF;
 		_pc += 2;
-		break;
+	}
+	break;
 
-	case 0x8000:	
+	case 0x8000:
+	{
 		switch (_opcode & 0xF) {
 		case 0x0:	//Caso 8xy0: LD Vx, Vy
-			Vx = Vy;
+		{
+			_regs[Vx] = _regs[Vy];
 			_pc += 2;
-			break;
-		case 0x1:	//Caso 8xy1: OR Vx, Vy
-			Vx = Vx | Vy;
-			_pc += 2;
-			break;
-		case 0x2:	//Caso 8xy2: AND Vx, Vy
-			Vx = Vx & Vy;
-			_pc += 2;
-			break;
-		case 0x3:	//Caso 8xy3: XOR Vx, Vy
-			Vx = Vx ^ Vy;
-			_pc += 2;
-			break;
-		case 0x4:	//Caso 8xy4: ADD Vx, Vy
-			Vx + Vy > 255 ? Vx = Vx + Vy, Vf = 1 : Vf = 0;
-			_pc += 2;
-			break;
-		case 0x5: 	//Caso 8xy5: SUB Vx, Vy
-			Vx > Vy ? Vf = 1 : Vf = 0;
-			Vx = Vx - Vy;
-			_pc += 2;
-		
-			break;
-		case 0x6:	//Caso 8xy6: SHR Vx {, Vy}
-			Vx & 0xF == 1 ? Vf = 1 : Vf = 0;
-			Vx /= 2;
-			_pc += 2;
-			break;
-		case 0x7:	//Caso 8xy7: SUBN Vx, Vy
-			Vy > Vx ? Vf = 1 : Vf = 0;
-			Vx = Vy - Vx;
-			_pc += 2;
-			break;
-		case 0xE:	//Caso 8xyE: SHL Vx {, Vy}
-			Vx & 0xF == 1 ? Vf = 1 : Vf = 0;
-			Vx *= 2;
-			_pc += 2;
-			break;
-
-
 		}
-	case 0x9000:	//Caso 9xy0: SNE Vx, Vy
-		Vx != Vy ? _pc += 4 : _pc = _pc + 2;
 		break;
+		case 0x1:	//Caso 8xy1: OR Vx, Vy
+		{
+			_regs[Vx] |= _regs[Vy];
+			_pc += 2;
+		}
+		break;
+		case 0x2:	//Caso 8xy2: AND Vx, Vy
+		{
+			_regs[Vx] &= _regs[Vy];
+			_pc += 2;
+		}
+		break;
+		case 0x3:	//Caso 8xy3: XOR Vx, Vy
+		{
+			_regs[Vx] ^= _regs[Vy];
+			_pc += 2;
+		}
+		break;
+		case 0x4:	//Caso 8xy4: ADD Vx, Vy
+		{
+			_regs[Vx] + _regs[Vy] > 255 ? _regs[Vx] += _regs[Vy], _regs[Vf] = 1 : _regs[Vf] = 0;
+			_pc += 2;
+		}
+		break;
+		case 0x5: 	//Caso 8xy5: SUB Vx, Vy
+		{
+			_regs[Vx] > _regs[Vy] ? _regs[Vf] = 1 : _regs[Vf] = 0;
+			_regs[Vx] -= _regs[Vy];
+			_pc += 2;
+		}
+		break;
+		case 0x6:	//Caso 8xy6: SHR Vx {, Vy} HACER
+		{
+			//HACER
+			//HACER
+			//HACER
+			//HACER
+			(_regs[Vx] >> 7 & 0x1) == 1 ? _regs[Vf] = 1 : _regs[Vf] = 0;
+			_regs[Vx] /= 2;
+			_pc += 2;
+		}
+		break;
+		case 0x7:	//Caso 8xy7: SUBN Vx, Vy
+		{
+			_regs[Vy] > _regs[Vx] ? _regs[Vf] = 1 : _regs[Vf] = 0;
+			_regs[Vx] = _regs[Vy] - _regs[Vx];
+			_pc += 2;
+		}
+		break;
+		case 0xE:	//Caso 8xyE: SHL Vx {, Vy} Chequea el bit más significativo de Vx
+		{
+			(Vx >> 3 & 0xF) == 1 ? _regs[Vf] = 1 : _regs[Vf] = 0;
+			_regs[Vx] *= 2;
+			_pc += 2;
+		}
+		break;
+		}
+	}
+	break;
+
+	case 0x9000:	//Caso 9xy0: SNE Vx, Vy
+	{
+		_regs[(_opcode >> 8) & 0xF] != Vy ? _pc += 4 : _pc = _pc + 2;
+	}
+	break;
 
 	case 0xA000:	//Caso Annn: LD I, addr
+	{
 		_I = _opcode & 0x0FFF;
 		_pc += 2;
-		break;
-	
+	}
+	break;
+
 	case 0xB000:	//Caso Bnnn: JP V0, addr
+	{
 		_pc = (_opcode & 0xFFF) + _regs[0];
-		break;
+	}
+	break;
 
 	case 0xC000:	//Caso Cxkk: RND Vx, byte
 		// Vx = número random ( 0 - 255 ) & kk
+	{
 		_pc += 2;
-		break;
+	}
+	break;
 
 	case 0xD000: //Caso Dxyn: DRW Vx, Vy, nibble
 	{
 		uint8_t height = _opcode & 0x000F;
+		uint8_t Vx = _regs[(_opcode >> 8) & 0xF];
+
 
 		uint8_t xPos = _regs[Vx] % 64;
-		uint8_t	yPos = _regs[Vx] % 32;
+		uint8_t	yPos = _regs[Vy] % 32;
 
 		_regs[0xF] = 0;
 		for (int row = 0; row < height; row++) {
@@ -219,9 +268,10 @@ void chip8::emulateCycle() {
 		}
 		_pc += 2;
 	}
-		break;
-	
+	break;
+
 	case 0xE000:
+	{
 		switch (_opcode & 0xF) {
 		case 0x000E: //Caso Ex9E: SKP Vx
 			keypad[_regs[(_opcode & 0xF00) >> 8]] != 0 ? _pc += 4 : _pc += 2;
@@ -230,33 +280,47 @@ void chip8::emulateCycle() {
 			keypad[_regs[(_opcode & 0xF00) >> 8]] == 0 ? _pc += 4 : _pc += 2;
 			break;
 		}
-
+	}
+	break;
 	case 0xF000:
+	{
 		switch (_opcode & 0xFF) {
 		case 0x0007: //Caso Fx07: LD Vx, DT
+		{
 			Vx = _delayTimer;
 			_pc += 2;
-			break;
+		}
+		break;
 		case 0x000A: //Caso Fx0A: LD Vx, K
+		{
 			keypad[(_opcode & 0xF00) >> 8] ? _regs[Vx] = (_opcode & 0xF00) >> 8, _pc += 2 : _pc -= 2; //la forma de que una instrucción se repita hasta que se haga lo pedido es que el pc vuelva al lugar donde empezaba esa instrucción
-			break;
+		}
+		break;
 		case 0x0015: //Caso Fx15: LD DT, Vx
+		{
 			_delayTimer = Vx;
 			_pc += 2;
-			break;
+		}
+		break;
 		case 0x0018: //Caso Fx18: LD ST, Vx
+		{
 			_soundTimer = Vx;
 			_pc += 2;
-			break;
+		}
+		break;
 		case 0x001E: //Caso Fx1E: ADD I, Vx
+		{
 			_I += Vx;
 			_pc += 2;
-			break;
+		}
+		break;
 		case 0x0029: //Caso Fx29: LD F, Vx	//Se guarda en _I la posición de memoria donde se encuentra el carácter almacenado en Vx. El fontset arranca en 0x50
 					 //Cada caracter se representa con 5 líneas de 1 byte, por lo que tendremos un caracter distinto cada 5 bytes
+		{
 			_I = FONTSET_START_ADRESS + (5 * _regs[Vx]);
 			_pc += 2;
-			break;
+		}
+		break;
 		case 0x0033: //Caso Fx33: LD B, Vx
 		{
 			uint8_t value = _regs[Vx];
@@ -272,22 +336,30 @@ void chip8::emulateCycle() {
 
 			_pc += 2;
 		}
-			break;
+		break;
 		case 0x0055: //Caso Fx55: LD [I], Vx
+		{
 			for (int i = 0; i < Vx; i++) {
 				_memory[_I + i] = _regs[i];
 			}
 			_pc += 2;
-			break;
+		}
+		break;
 		case 0x0065: //Caso LD Vx, [I]
+		{
 			for (int i = 0; i < Vx; i++) {
 				_regs[i] = _memory[_I + i];
 			}
 			_pc += 2;
-			break;
 		}
-		
+		break;
+		}
+
 	}
+	break;
+
+
+
 
 	if (_delayTimer > 0) {
 		_delayTimer--;
@@ -297,5 +369,6 @@ void chip8::emulateCycle() {
 		_soundTimer--;
 	}
 
+	}
 }
 

@@ -9,11 +9,12 @@
 
 int main() {
 	
-	int cycleDelay = 4000;
+	int cycleDelay = 200;
 	
 
 	chip8 chip = chip8();
 	chip.loadGame("IBM Logo.ch8");
+
 	
 	Platform platform("emu", 64 * 10, 32 * 10, 64, 32);
 
