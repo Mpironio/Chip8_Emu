@@ -1,6 +1,7 @@
 #include "chip8.h"
 #include <fstream>
 #include <iostream>
+#include <cassert>
 
 
 const uint16_t START_ADRESS = 0x200;
@@ -50,6 +51,9 @@ chip8::chip8() {
 		_memory[FONTSET_START_ADRESS + i] = FONTSET[i];
 	}
 
+	_delayTimer = 0;
+	_soundTimer = 0;
+
 };
 
 void chip8::loadGame(char const* gameName) {
@@ -68,6 +72,11 @@ void chip8::loadGame(char const* gameName) {
 	}
 }
 
+//TODO: 
+/*
+	- Refactorizar los cases
+	- Terminar las operaciones
+*/
 void chip8::emulateCycle() {
 	//Fetch
 	_opcode = _memory[_pc] << 8 | _memory[_pc + 1];
@@ -77,26 +86,23 @@ void chip8::emulateCycle() {
 	uint8_t Vx = (_opcode >> 8) & 0xF;
 	uint8_t Vy = (_opcode >> 4) & 0xF;
 	uint8_t Vf = 15;
-	switch (_opcode & 0xF000) {
-	case 0x0000: {
-		switch (_opcode & 0x000F) {
-		case 0x0000: {//Caso 00E0: CLS Clear 
-			//(si haces la intersección de arriba el resultado es 0x0000 y entra en este caso)
-			for (int i = 0; i < 64 * 32; i++) {
-				video[i] = 0;
-			}
-			_pc += 2;
+	switch (_opcode) {
+	default: assert(false); break;
+	case 0x00E0: {//Caso 00E0: CLS Clear 
+		//(si haces la intersección de arriba el resultado es 0x0000 y entra en este caso)
+		for (int i = 0; i < 64 * 32; i++) {
+			video[i] = 0;
 		}
-				   break;
-		case 0x000E: {//Caso 00EE: RET
+		_pc += 2;
+	}
+		break;
+	case 0x00EE: {//Caso 00EE: RET
 			_sp--;
 			_pc = _stack[_sp];
 		}
-				   break;
-
-		}
-	}
-			   break;
+		break;
+	
+	
 	case 0x1000:	//Caso 1nnn: JP addr
 	{
 		_pc = _opcode & 0x0FFF;
@@ -114,13 +120,13 @@ void chip8::emulateCycle() {
 	case 0x3000:	//Caso 3xkk: SE Vx, byte
 	{
 		
-		_regs[Vx] == _opcode & 0x00FF ? _pc += 4 : _pc = _pc + 2;
+		_regs[Vx] == (_opcode & 0x00FF) ? _pc += 4 : _pc = _pc + 2;
 	}
 	break;
 
 	case 0x4000:	//Caso 4xkk: SNE Vx, byte
 	{
-		_regs[Vx] != _opcode & 0x00FF ? _pc += 4 : _pc = _pc + 2;
+		_regs[Vx] != (_opcode & 0x00FF) ? _pc += 4 : _pc = _pc + 2;
 	}
 	break;
 
@@ -216,7 +222,7 @@ void chip8::emulateCycle() {
 
 	case 0x9000:	//Caso 9xy0: SNE Vx, Vy
 	{
-		_regs[(_opcode >> 8) & 0xF] != Vy ? _pc += 4 : _pc = _pc + 2;
+		_regs[Vx] != _regs[Vy] ? _pc += 4 : _pc = _pc + 2;
 	}
 	break;
 
@@ -243,9 +249,6 @@ void chip8::emulateCycle() {
 	case 0xD000: //Caso Dxyn: DRW Vx, Vy, nibble
 	{
 		uint8_t height = _opcode & 0x000F;
-		uint8_t Vx = _regs[(_opcode >> 8) & 0xF];
-
-
 		uint8_t xPos = _regs[Vx] % 64;
 		uint8_t	yPos = _regs[Vy] % 32;
 
@@ -274,10 +277,10 @@ void chip8::emulateCycle() {
 	{
 		switch (_opcode & 0xF) {
 		case 0x000E: //Caso Ex9E: SKP Vx
-			keypad[_regs[(_opcode & 0xF00) >> 8]] != 0 ? _pc += 4 : _pc += 2;
+			keypad[_regs[Vx]] != 0 ? _pc += 4 : _pc += 2;
 			break;
 		case 0x0001: //Caso ExA1: SKNP Vx
-			keypad[_regs[(_opcode & 0xF00) >> 8]] == 0 ? _pc += 4 : _pc += 2;
+			keypad[_regs[Vx]] == 0 ? _pc += 4 : _pc += 2;
 			break;
 		}
 	}
@@ -287,7 +290,7 @@ void chip8::emulateCycle() {
 		switch (_opcode & 0xFF) {
 		case 0x0007: //Caso Fx07: LD Vx, DT
 		{
-			Vx = _delayTimer;
+			_regs[Vx] = _delayTimer;
 			_pc += 2;
 		}
 		break;
@@ -298,19 +301,19 @@ void chip8::emulateCycle() {
 		break;
 		case 0x0015: //Caso Fx15: LD DT, Vx
 		{
-			_delayTimer = Vx;
+			_delayTimer = _regs[Vx];
 			_pc += 2;
 		}
 		break;
 		case 0x0018: //Caso Fx18: LD ST, Vx
 		{
-			_soundTimer = Vx;
+			_soundTimer = _regs[Vx];
 			_pc += 2;
 		}
 		break;
 		case 0x001E: //Caso Fx1E: ADD I, Vx
 		{
-			_I += Vx;
+			_I += _regs[Vx];
 			_pc += 2;
 		}
 		break;
