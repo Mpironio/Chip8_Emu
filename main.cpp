@@ -9,11 +9,11 @@
 
 int main() {
 	
-	int cycleDelay = 50;
+	int cycleDelay = 4;
 	
 
 	chip8 chip = chip8();
-	chip.loadGame("test_opcode.ch8");
+	chip.loadGame("tetris.ch8");
 
 	
 	Platform platform("emu", 64 * 10, 32 * 10, 64, 32);

@@ -1,7 +1,10 @@
-#include <string>
+#pragma once
 
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
+#include <string>
+#include <random>
+#include <chrono>
+#include <cstdint>
+
 
 class chip8 {
     public:
@@ -10,6 +13,7 @@ class chip8 {
         void emulateCycle();
         uint32_t video[64 * 32]{};
         uint8_t keypad[16]{};
+       
         
     private:
         uint16_t _opcode; //chip8 has 2byte opcodes
@@ -21,6 +25,9 @@ class chip8 {
         uint16_t _sp;
         uint8_t _delayTimer;
         uint8_t _soundTimer;
+
+        std::default_random_engine randGen;
+        std::uniform_int_distribution<int> randByte;
         
 };
 
